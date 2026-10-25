@@ -80,12 +80,12 @@ function bb_setup_page() {
 		<h2><?php esc_html_e( 'One-click setup', 'bunnybabe' ); ?></h2>
 		<p><?php esc_html_e( 'This creates anything that is missing. It does not delete anything:', 'bunnybabe' ); ?></p>
 		<ul style="list-style:disc;padding-left:20px">
-			<li><?php esc_html_e( 'The 5 scents as products (RM19.90, with photos) in a "Bunny Babe" category', 'bunnybabe' ); ?></li>
+			<li><?php echo esc_html( sprintf( /* translators: %s price */ __( 'The 5 scents as products (RM%s, with photos) in a "Bunny Babe" category', 'bunnybabe' ), number_format( bb_config()['unit'], 2 ) ) ); ?></li>
 			<li><?php esc_html_e( 'Voucher BUNNY5 — RM5 off, first order, once per customer', 'bunnybabe' ); ?></li>
 			<li><?php esc_html_e( 'A "Home" page set as your front page, and a "Track Order" page', 'bunnybabe' ); ?></li>
 			<li><?php esc_html_e( 'Switches the WooCommerce Checkout page to the classic checkout (needed for this design); the old content is kept as a backup', 'bunnybabe' ); ?></li>
 			<li><?php esc_html_e( 'Store: Malaysia only, currency RM', 'bunnybabe' ); ?></li>
-			<li><?php esc_html_e( 'Shipping zone "Malaysia" with a RM6 flat rate (FREE from 2 bottles is automatic)', 'bunnybabe' ); ?></li>
+			<li><?php echo esc_html( sprintf( /* translators: %s fee */ __( 'Shipping zone "Malaysia" with a RM%s flat rate (FREE from 2 bottles is automatic)', 'bunnybabe' ), number_format( bb_config()['ship_fee'], 2 ) ) ); ?></li>
 		</ul>
 		<?php if ( $woo ) : ?>
 			<form method="post">
@@ -276,7 +276,7 @@ function bb_run_setup() {
 		}
 	}
 
-	// Shipping zone: Malaysia, flat rate RM6.
+	// Shipping zone: Malaysia, flat rate (ship_fee in config).
 	$has_zone = false;
 	foreach ( WC_Shipping_Zones::get_zones() as $z ) {
 		foreach ( $z['zone_locations'] as $loc ) {
@@ -301,7 +301,8 @@ function bb_run_setup() {
 				)
 			);
 		}
-		$log[] = __( 'Created shipping zone "Malaysia" with RM6 flat rate.', 'bunnybabe' );
+		/* translators: %s fee */
+		$log[] = sprintf( __( 'Created shipping zone "Malaysia" with RM%s flat rate.', 'bunnybabe' ), number_format( $c['ship_fee'], 2 ) );
 	}
 
 	flush_rewrite_rules();
