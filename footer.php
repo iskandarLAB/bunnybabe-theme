@@ -57,6 +57,13 @@ if ( is_front_page() && class_exists( 'WooCommerce' ) && WC()->cart ) :
 	</button>
 </div>
 <div class="bb-toast" data-bb="toast" role="status" aria-live="polite"></div>
+<div class="bb-recent" data-bb="recent" aria-live="polite" hidden>
+	<button type="button" class="bb-recent__main" data-bb-open="">
+		<img src="" alt="" width="52" height="52">
+		<span class="bb-recent__text"><strong></strong><span></span><small></small></span>
+	</button>
+	<button type="button" class="bb-recent__x" data-bb="recent-x" aria-label="<?php esc_attr_e( 'Hide recent purchases', 'bunnybabe' ); ?>">×</button>
+</div>
 <?php endif; ?>
 
 </div>

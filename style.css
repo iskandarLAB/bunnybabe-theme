@@ -3,7 +3,7 @@ Theme Name: Bunny Babe
 Theme URI: https://plum-gerbil-363565.hostingersite.com
 Author: Bunny Babe
 Description: One-page shop + checkout and order tracking for Bunny Babe perfume. Built for WooCommerce with bundle pricing (2 for RM35.50, 5 for RM85.50), free shipping from 2 bottles, first-order and second-order vouchers.
-Version: 1.3.2
+Version: 1.4.1
 Requires at least: 6.3
 Requires PHP: 7.4
 Text Domain: bunnybabe
@@ -151,7 +151,7 @@ button { cursor: pointer; }
 .bb-card__buy { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 4px; }
 .bb-price { font-family: var(--bb-display); font-size: 32px; line-height: 1; }
 .bb-addbtn { min-height: 48px; padding: 0 20px; font-size: 15px; }
-.bb-addbtn.is-loading { opacity: .7; pointer-events: none; }
+.bb-addbtn.is-loading, .bb-co__place.is-loading { opacity: .7; pointer-events: none; }
 
 /* Mood tiles */
 .bb-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
@@ -560,3 +560,40 @@ body.bb-lock { overflow: hidden; }
 
 /* Checkout: hide empty "Additional information" card (order notes are off) */
 .bb-co-form .woocommerce-additional-fields, .bb-co-form #customer_details .col-2:not(:has(input, select, textarea)) { display: none !important; }
+
+/* Babe Pack countdown */
+.bb-countdown { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; background: var(--bb-black); color: var(--bb-white); border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+.bb-countdown::before { content: '⏰'; }
+.bb-countdown strong { color: var(--bb-pink); font-size: 16px; font-variant-numeric: tabular-nums; min-width: 5ch; }
+.bb-plan--hero .bb-countdown { background: var(--bb-pink); color: var(--bb-black); border: 2px solid var(--bb-white); }
+.bb-plan--hero .bb-countdown strong { color: var(--bb-black); }
+.bb-countdown.is-urgent strong { animation: bb-cd-blink 1s steps(2, start) infinite; }
+@keyframes bb-cd-blink { to { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .bb-countdown.is-urgent strong { animation: none; } }
+
+/* Reviews carousel */
+.bb-sechead .bb-revnav { display: flex; flex-direction: row; gap: 8px; align-self: flex-end; }
+.bb-review__who { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bb-reviews { display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 4px 16px; scrollbar-width: none; }
+.bb-reviews::-webkit-scrollbar { display: none; }
+.bb-review { flex: 0 0 min(420px, 84vw); scroll-snap-align: start; margin: 0; background: var(--bb-white); border: 2px solid var(--bb-black); border-radius: 24px; overflow: hidden; box-shadow: 4px 4px 0 var(--bb-pink); display: flex; flex-direction: column; }
+.bb-review img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; display: block; background: var(--bb-ivory); }
+.bb-review figcaption { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.bb-review:not(:has(img)) figcaption { justify-content: center; padding: 28px; }
+.bb-review:not(:has(img)) blockquote { font-size: 20px; }
+.bb-review__stars { color: #F5B301; letter-spacing: 2px; font-size: 18px; }
+.bb-review blockquote { margin: 0; font-size: 16px; line-height: 1.5; }
+@media (max-width: 700px) { .bb-sechead .bb-revnav { display: none; } }
+
+/* Recent purchase pop-up */
+.bb-recent { position: fixed; left: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 55; display: flex; align-items: center; max-width: min(340px, calc(100% - 24px)); background: var(--bb-white); border: 2px solid var(--bb-black); border-radius: 18px; box-shadow: 3px 3px 0 var(--bb-pink); opacity: 0; transform: translateY(16px); transition: opacity .3s ease, transform .35s var(--bb-ease); }
+.bb-recent.is-on { opacity: 1; transform: none; }
+.bb-recent__main { display: flex; align-items: center; gap: 10px; padding: 8px 4px 8px 8px; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.bb-recent__main img { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; flex: 0 0 52px; }
+.bb-recent__text { display: flex; flex-direction: column; min-width: 0; font-size: 13px; line-height: 1.3; }
+.bb-recent__text strong, .bb-recent__text > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-recent__text small { color: var(--bb-ink-3, #666); font-size: 11px; }
+.bb-recent__x { align-self: flex-start; background: none; border: 0; font-size: 20px; line-height: 1; padding: 6px 10px; cursor: pointer; color: inherit; }
+.bb-lock .bb-recent { display: none; }
+@media (min-width: 900px) { .bb-recent { left: 20px; bottom: 20px; } }
+@media (prefers-reduced-motion: reduce) { .bb-recent { transition: none; } }
