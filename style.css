@@ -3,7 +3,7 @@ Theme Name: Bunny Babe
 Theme URI: https://plum-gerbil-363565.hostingersite.com
 Author: Bunny Babe
 Description: One-page shop + checkout and order tracking for Bunny Babe perfume. Built for WooCommerce with bundle pricing (2 for RM35.50, 5 for RM85.50), free shipping from 2 bottles, first-order and second-order vouchers.
-Version: 1.4.1
+Version: 1.5.0
 Requires at least: 6.3
 Requires PHP: 7.4
 Text Domain: bunnybabe
@@ -597,3 +597,36 @@ body.bb-lock { overflow: hidden; }
 .bb-lock .bb-recent { display: none; }
 @media (min-width: 900px) { .bb-recent { left: 20px; bottom: 20px; } }
 @media (prefers-reduced-motion: reduce) { .bb-recent { transition: none; } }
+
+/* ---------- 1.5.0: high-conversion flow ---------- */
+.bb-hero__proof { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+.bb-hero__proof small { font-weight: 400; color: var(--bb-ink-2); font-size: 13px; }
+.bb-stars { color: #F5B301; letter-spacing: 2px; font-size: 17px; }
+.bb-hero__price span { font-size: 11px; }
+.bb-vchip { display: inline-flex; align-items: center; gap: 12px; margin-top: 14px; padding: 10px 18px; background: var(--bb-white); border: 2px dashed var(--bb-black); border-radius: 16px; text-align: left; }
+.bb-vchip strong { font-family: var(--bb-display); font-weight: 400; font-size: 28px; letter-spacing: .08em; line-height: 1; }
+.bb-vchip span { font-size: 14px; font-weight: 600; line-height: 1.3; }
+.bb-freegift { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--bb-pink); color: var(--bb-black); border: 2px solid var(--bb-white); border-radius: 14px; transform: rotate(-1.5deg); box-shadow: 4px 4px 0 var(--bb-white); }
+.bb-freegift svg { flex: none; }
+.bb-freegift b { font-family: var(--bb-display); font-weight: 400; font-size: 26px; line-height: 1; }
+.bb-freegift em { margin-left: auto; font-style: normal; background: var(--bb-black); color: var(--bb-white); border-radius: 8px; padding: 4px 8px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.bb-trustrow { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 28px; margin-top: 32px; font-size: 14px; font-weight: 600; }
+.bb-trustrow span { display: inline-flex; align-items: center; gap: 8px; }
+.bb-review__head { font-family: var(--bb-display); font-weight: 400; font-size: 30px; line-height: 1; }
+.bb-review__who small { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--bb-ink-3); }
+.bb-pickhelp { margin: 0; font-size: 16px; line-height: 1.6; }
+.bb-pickhelp mark { background: var(--bb-pink); padding: 2px 6px; font-weight: 700; }
+.bb-linkbtn { background: none; border: 0; padding: 8px 0; min-height: 44px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.bb-why { background: var(--bb-black); color: var(--bb-white); border-radius: 32px; padding: clamp(32px, 5vw, 64px); display: grid; gap: 32px; }
+.bb-why > div:first-child { display: flex; flex-direction: column; gap: 8px; }
+.bb-why__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; }
+.bb-why__grid strong { display: block; font-family: var(--bb-display); font-weight: 400; font-size: 32px; line-height: 1; color: var(--bb-pink); margin-bottom: 6px; }
+.bb-why__grid span { font-size: 15px; color: #d9d9d9; }
+.bb-faq details { border-top: 2px solid var(--bb-black); padding: 18px 0; }
+.bb-faq details:last-child { border-bottom: 2px solid var(--bb-black); }
+.bb-faq summary { font-weight: 700; font-size: 17px; cursor: pointer; }
+.bb-faq p { margin: 10px 0 0; color: var(--bb-ink-2); line-height: 1.6; }
+@media (max-width: 700px) {
+	.bb-freegift b { font-size: 22px; }
+	.bb-marquee__group { font-size: 30px; }
+}

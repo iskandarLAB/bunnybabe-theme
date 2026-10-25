@@ -4,7 +4,7 @@
  */
 defined( 'ABSPATH' ) || exit;
 
-define( 'BB_VERSION', '1.4.1' );
+define( 'BB_VERSION', '1.5.0' );
 define( 'BB_DIR', get_template_directory() );
 
 require BB_DIR . '/inc/config.php';
