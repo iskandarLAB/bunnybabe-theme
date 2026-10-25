@@ -202,8 +202,21 @@
 			openSheet('bb-product');
 		}
 	});
+	// Bag +/−: update the number at once and send the final quantity after a
+	// short pause, so quick taps add up instead of being dropped while busy.
+	var stepTimers = {};
+	function sendSet(pid, q, $btn) {
+		if (busy) { stepTimers[pid] = setTimeout(function () { sendSet(pid, q, $btn); }, 200); return; }
+		act({ op: 'set', product: pid, qty: q }, $btn);
+	}
 	$(document).on('click', '[data-bb-set]', function () {
-		act({ op: 'set', product: $(this).data('bb-set'), qty: $(this).data('qty') }, $(this));
+		var $b = $(this), pid = $b.data('bb-set');
+		var $n = $b.closest('.bb-stepper').find('span');
+		var cur = parseInt($n.text(), 10) || 0;
+		var q = Math.max(0, Math.min(50, cur + ($b.is(':first-child') ? -1 : 1)));
+		$n.text(q);
+		clearTimeout(stepTimers[pid]);
+		stepTimers[pid] = setTimeout(function () { sendSet(pid, q, $b); }, 350);
 	});
 	$(document).on('click', '[data-bb-addall]', function () {
 		act({ op: 'addall' }, $(this)).done(function (r) {
@@ -249,11 +262,24 @@
 	}
 	$(document).on('click', '[data-bb-checkout]', function () { if (!state.empty) { openCheckout(); } });
 	$(document).on('click', '[data-bb-backbag]', function () { closeCheckout(); openSheet('bb-bag'); });
+	// The real #place_order is hidden; show progress on our sticky button so
+	// nobody taps again or leaves while the payment page is being prepared.
+	function placeBusy(on) {
+		$('[data-bb="place"]').toggleClass('is-loading', on).prop('disabled', on)
+			.attr('aria-busy', on ? 'true' : null)
+			.text(on ? 'Processing…' : 'Place order');
+	}
 	$(document).on('click', '[data-bb="place"]', function () {
 		var p = document.getElementById('place_order');
-		if (p) { p.click(); }
+		if (!p || $('form.checkout').is('.processing')) { return; }
+		placeBusy(true);
+		p.click();
+		// Client-side validation can stop the submit without any event; release the button.
+		setTimeout(function () { if (!$('form.checkout').is('.processing')) { placeBusy(false); } }, 400);
 	});
+	$(window).on('pageshow', function () { placeBusy(false); });
 	$(document.body).on('checkout_error', function () {
+		placeBusy(false);
 		var body = document.querySelector('.bb-co__body');
 		if (body) { body.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }); }
 	});
@@ -393,7 +419,8 @@
 	$(document.body).on('updated_checkout country_to_state_changed init_checkout', phoneTop);
 
 	/* Saved address (any device): masked preview, real values stay on the server. */
-	var SAVED_ROWS = '#billing_first_name_field, #billing_address_1_field, #billing_postcode_field, #billing_city_field, #billing_state_field';
+	// Email too: with a saved address the receipt goes to the email on that order.
+	var SAVED_ROWS = '#billing_first_name_field, #billing_email_field, #billing_address_1_field, #billing_postcode_field, #billing_city_field, #billing_state_field';
 	var lookedUp = '';
 	function usingSaved() { return $('form.checkout input[name="bb_use_saved"]').length > 0; }
 	function esc(t) { return $('<div>').text(t == null ? '' : String(t)).html(); }
@@ -401,8 +428,7 @@
 		var $f = $('form.checkout');
 		if (!$f.find('input[name="bb_use_saved"]').length) { $f.append('<input type="hidden" name="bb_use_saved" value="1">'); }
 		$(SAVED_ROWS).addClass('bb-hide-saved');
-		fieldEl('billing_postcode').val(d.postcode);
-		fieldEl('billing_city').val(d.city);
+		// Only masked values reach the browser; the server fills in the real address on submit.
 		fieldEl('billing_state').val(d.state).trigger('change');
 		$('#bb-saved').addClass('is-used').find('[data-bb="saved-q"]').text('Shipping to your last address ✓');
 		$('#bb-saved [data-bb="saved-yes"]').prop('hidden', true);
@@ -462,6 +488,96 @@
 		});
 	});
 
+	/* ---------- Recent purchase pop-up (real paid orders) ---------- */
+	function ago(ts) {
+		var m = Math.max(1, Math.round((Date.now() / 1000 - ts) / 60));
+		if (m < 60) { return m + (m === 1 ? ' minute ago' : ' minutes ago'); }
+		var h = Math.round(m / 60);
+		if (h < 24) { return h + (h === 1 ? ' hour ago' : ' hours ago'); }
+		var d = Math.round(h / 24);
+		return d + (d === 1 ? ' day ago' : ' days ago');
+	}
+	function recentPopups() {
+		var list = D.recent || [];
+		var $r = $('[data-bb="recent"]');
+		var off = false;
+		try { off = window.sessionStorage.getItem('bb_rp_off') === '1'; } catch (e) {}
+		if (!list.length || !$r.length || off) { return; }
+		var i = 0, shown = 0, timer;
+		function next(delay) { timer = setTimeout(show, delay); }
+		function hide() { $r.removeClass('is-on'); setTimeout(function () { $r.prop('hidden', true); }, 400); }
+		function show() {
+			if (shown >= 5) { return; }
+			// Never cover the bag, product sheet or checkout.
+			if (document.body.classList.contains('bb-lock')) { next(6000); return; }
+			var o = list[i % list.length];
+			i++; shown++;
+			$r.find('.bb-recent__main').attr('data-bb-open', o.scent).removeData('bb-open');
+			$r.find('img').attr('src', o.img);
+			$r.find('strong').text(o.name + (o.city ? ' from ' + o.city : ''));
+			$r.find('.bb-recent__text > span').text('bought ' + o.label + (o.more > 0 ? ' + ' + o.more + ' more' : ''));
+			$r.find('small').text(ago(o.ts) + ' · ✓ Verified purchase');
+			$r.prop('hidden', false);
+			requestAnimationFrame(function () { $r.addClass('is-on'); });
+			setTimeout(hide, 5500);
+			next(18000 + Math.random() * 10000);
+		}
+		$r.on('click', '.bb-recent__main', hide);
+		$r.on('click', '[data-bb="recent-x"]', function () {
+			clearTimeout(timer);
+			hide();
+			try { window.sessionStorage.setItem('bb_rp_off', '1'); } catch (e) {}
+		});
+		next(8000);
+	}
+
+	/* ---------- Reviews carousel ---------- */
+	function reviewsCarousel() {
+		var el = document.querySelector('[data-bb="reviews"]');
+		if (!el) { return; }
+		function step(dir) {
+			var card = el.querySelector('.bb-review');
+			var w = card ? card.getBoundingClientRect().width + 20 : el.clientWidth;
+			var atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 8;
+			if (dir > 0 && atEnd) {
+				el.scrollTo({ left: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+			} else {
+				el.scrollBy({ left: dir * w, behavior: reduceMotion ? 'auto' : 'smooth' });
+			}
+		}
+		$(document).on('click', '[data-bb-rev]', function () { paused = true; step(parseInt($(this).attr('data-bb-rev'), 10)); });
+		// Gentle auto-play; stops for good once someone swipes, taps or hovers.
+		var paused = reduceMotion;
+		$(el).on('pointerdown touchstart mouseenter focusin wheel', function () { paused = true; });
+		setInterval(function () {
+			var r = el.getBoundingClientRect();
+			if (!paused && !document.hidden && r.top < window.innerHeight && r.bottom > 0) { step(1); }
+		}, 4500);
+	}
+
+	/* ---------- Babe Pack countdown ---------- */
+	// Starts at 9:46 per visit; a refresh keeps counting instead of restarting.
+	function countdown() {
+		var $c = $('[data-bb-countdown]');
+		if (!$c.length) { return; }
+		var KEY = 'bb_cd_end', end = 0;
+		try { end = parseInt(window.sessionStorage.getItem(KEY), 10) || 0; } catch (e) {}
+		if (!end) {
+			end = Date.now() + parseInt($c.attr('data-bb-countdown'), 10) * 1000;
+			try { window.sessionStorage.setItem(KEY, String(end)); } catch (e) {}
+		}
+		var $t = $c.find('[data-bb="cd-time"]');
+		function pad(n) { return (n < 10 ? '0' : '') + n; }
+		function tick() {
+			var s = Math.max(0, Math.round((end - Date.now()) / 1000));
+			if (!s) { $c.prop('hidden', true); clearInterval(timer); return; }
+			$t.text(pad(Math.floor(s / 60)) + ':' + pad(s % 60));
+			$c.prop('hidden', false).toggleClass('is-urgent', s <= 60);
+		}
+		var timer = setInterval(tick, 1000);
+		tick();
+	}
+
 	/* ---------- On load ---------- */
 	$(function () {
 		pickScent($('[data-bb-pick]').first().data('bb-pick'));
@@ -469,6 +585,9 @@
 		fieldEl('billing_phone').attr({ inputmode: 'tel', autocomplete: 'tel' });
 		phoneTop();
 		restoreDetails();
+		recentPopups();
+		reviewsCarousel();
+		countdown();
 		var h = window.location.hash;
 		if ((h === '#bag' || h === '#checkout') && document.getElementById('bb-bag')) {
 			openSheet('bb-bag');

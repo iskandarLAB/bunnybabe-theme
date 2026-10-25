@@ -145,11 +145,21 @@ add_action(
 		if ( ! $order ) {
 			return;
 		}
-		$code   = bb_next_voucher_code( $order );
-		$failed = in_array( $order->get_status(), array( 'failed', 'cancelled' ), true );
-		$step   = function_exists( 'bb_track_step' ) ? max( 0, bb_track_step( $order ) ) : 0;
-		if ( 'pending' === $order->get_status() || 'on-hold' === $order->get_status() ) {
-			$step = 1; // Paid, waiting for the gateway callback.
+		$code    = bb_next_voucher_code( $order );
+		$failed  = in_array( $order->get_status(), array( 'failed', 'cancelled' ), true );
+		$unpaid  = 'pending' === $order->get_status() && $order->needs_payment();
+		$step    = function_exists( 'bb_track_step' ) ? max( 0, bb_track_step( $order ) ) : 0;
+		if ( 'on-hold' === $order->get_status() ) {
+			$step = 1; // Waiting for a manual payment check (e.g. bank transfer).
+		}
+		if ( $failed ) {
+			$head = __( 'Payment not completed', 'bunnybabe' );
+		} elseif ( $unpaid ) {
+			$head = __( 'Waiting for your payment', 'bunnybabe' );
+		} elseif ( $order->is_paid() && 'cod' !== $order->get_payment_method() ) {
+			$head = __( 'Payment successful', 'bunnybabe' );
+		} else {
+			$head = __( 'Order confirmed', 'bunnybabe' );
 		}
 		$dates  = function_exists( 'bb_track_dates' ) ? bb_track_dates( $order ) : array();
 		$titles = array( __( 'Order placed', 'bunnybabe' ), __( 'Packed with love', 'bunnybabe' ), __( 'Shipped', 'bunnybabe' ), __( 'Out for delivery', 'bunnybabe' ), __( 'Delivered', 'bunnybabe' ) );
@@ -166,13 +176,21 @@ add_action(
 		}
 		?>
 		<div class="bb-ty">
-			<div class="bb-ty__head<?php echo $failed ? ' is-failed' : ''; ?>">
-				<span class="bb-ty__check" aria-hidden="true"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><?php echo $failed ? '<path d="M6 6l12 12M18 6L6 18"/>' : '<path d="M5 12.5l4.5 4.5L19 7.5"/>'; ?></svg></span>
-				<strong><?php echo $failed ? esc_html__( 'Payment not completed', 'bunnybabe' ) : esc_html__( 'Payment successful', 'bunnybabe' ); ?></strong>
+			<div class="bb-ty__head<?php echo ( $failed || $unpaid ) ? ' is-failed' : ''; ?>">
+				<span class="bb-ty__check" aria-hidden="true"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><?php echo $failed ? '<path d="M6 6l12 12M18 6L6 18"/>' : ( $unpaid ? '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>' : '<path d="M5 12.5l4.5 4.5L19 7.5"/>' ); ?></svg></span>
+				<strong><?php echo esc_html( $head ); ?></strong>
 				<span><?php echo esc_html( sprintf( /* translators: 1 order no, 2 total */ __( 'Order #%1$s · %2$s', 'bunnybabe' ), $order->get_order_number(), wp_strip_all_tags( wc_price( $order->get_total() ) ) ) ); ?></span>
+				<?php if ( $failed || $unpaid ) : ?>
+					<?php if ( $unpaid ) : ?>
+						<span><?php esc_html_e( "We haven't received your payment yet. If you just paid, refresh this page in a moment.", 'bunnybabe' ); ?></span>
+					<?php endif; ?>
+					<?php if ( $order->needs_payment() ) : ?>
+						<a class="bb-btn bb-btn--black" style="margin-top:12px" href="<?php echo esc_url( $order->get_checkout_payment_url() ); ?>"><?php esc_html_e( 'Complete payment', 'bunnybabe' ); ?></a>
+					<?php endif; ?>
+				<?php endif; ?>
 			</div>
 
-			<?php if ( ! $failed ) : ?>
+			<?php if ( ! $failed && ! $unpaid ) : ?>
 			<div class="bb-ty__card">
 				<div class="bb-ty__cardhead"><strong><?php esc_html_e( 'Shipping status', 'bunnybabe' ); ?></strong><span><?php esc_html_e( 'EasyParcel', 'bunnybabe' ); ?></span></div>
 				<ol class="bb-steps bb-steps--ty">
@@ -238,6 +256,15 @@ add_action(
 		<?php
 	},
 	5
+);
+
+// Our card above already lists items + totals; WooCommerce's own details table
+// (with the full address) was only hidden by CSS, so don't print it at all.
+add_action(
+	'init',
+	function () {
+		remove_action( 'woocommerce_thankyou', 'woocommerce_order_details_table', 10 );
+	}
 );
 
 /** Order emails to the customer show the next-order code. */
@@ -513,22 +540,56 @@ function bb_cart_is_test() {
 	return true;
 }
 
-/** Auto-apply RM5 for first orders as soon as something is in the bag. */
-add_action(
-	'woocommerce_add_to_cart',
-	function () {
-		if ( ! WC()->session || ! WC()->cart || WC()->session->get( 'bb_no_auto' ) || WC()->session->get( 'bb_returning' ) || bb_cart_is_test() ) {
-			return;
+/** Auto-apply RM5 for first orders once the bag has enough bottles. */
+function bb_auto_first_coupon() {
+	if ( ! WC()->session || ! WC()->cart || WC()->session->get( 'bb_no_auto' ) || WC()->session->get( 'bb_returning' ) || bb_cart_is_test() ) {
+		return;
+	}
+	if ( WC()->customer && bb_customer_has_orders( WC()->customer->get_billing_email(), WC()->customer->get_billing_phone() ) ) {
+		WC()->session->set( 'bb_returning', 1 );
+		return;
+	}
+	if ( ! WC()->cart->get_applied_coupons() && bb_cart_scent_count() >= (int) bb_config()['first_min'] ) {
+		bb_quiet_coupon( bb_config()['first_coupon'] );
+	}
+}
+add_action( 'woocommerce_add_to_cart', 'bb_auto_first_coupon', 100 );
+
+/** Bag changed (+/−, remove): drop vouchers that no longer fit, add BUNNY5 when it now does. */
+function bb_sync_bag_coupons() {
+	if ( ! WC()->cart ) {
+		return;
+	}
+	$discounts = new WC_Discounts( WC()->cart );
+	foreach ( WC()->cart->get_applied_coupons() as $code ) {
+		if ( is_wp_error( $discounts->is_coupon_valid( new WC_Coupon( $code ) ) ) ) {
+			bb_quiet_coupon( $code, false );
 		}
-		if ( WC()->customer && bb_customer_has_orders( WC()->customer->get_billing_email(), WC()->customer->get_billing_phone() ) ) {
-			WC()->session->set( 'bb_returning', 1 );
-			return;
+	}
+	bb_auto_first_coupon();
+}
+
+/** BUNNY5 needs at least 2 bottles in the bag. */
+add_filter(
+	'woocommerce_coupon_is_valid',
+	function ( $valid, $coupon ) {
+		$min = (int) bb_config()['first_min'];
+		if ( $valid && 0 === strcasecmp( $coupon->get_code(), bb_config()['first_coupon'] ) && bb_cart_scent_count() < $min ) {
+			throw new Exception(
+				esc_html(
+					sprintf(
+						/* translators: 1 code, 2 bottles */
+						__( '%1$s works from %2$d bottles. Add one more scent to use it ♡', 'bunnybabe' ),
+						strtoupper( bb_config()['first_coupon'] ),
+						$min
+					)
+				)
+			);
 		}
-		if ( ! WC()->cart->get_applied_coupons() ) {
-			bb_quiet_coupon( bb_config()['first_coupon'] );
-		}
+		return $valid;
 	},
-	100
+	10,
+	2
 );
 
 /**
@@ -732,8 +793,8 @@ function bb_ajax_lookup() {
 			'found'    => true,
 			'name'     => bb_mask( $order->get_billing_first_name() ),
 			'address'  => bb_mask( $order->get_billing_address_1() ),
-			'postcode' => $order->get_billing_postcode(),
-			'city'     => $order->get_billing_city(),
+			'postcode' => substr( (string) $order->get_billing_postcode(), 0, 2 ) . '•••',
+			'city'     => bb_mask( $order->get_billing_city() ),
 			'state'    => $st,
 			'state_name' => isset( $states[ $st ] ) ? $states[ $st ] : $st,
 		)
@@ -763,9 +824,9 @@ add_filter(
 		$data['billing_postcode']   = $order->get_billing_postcode();
 		$data['billing_city']       = $order->get_billing_city();
 		$data['billing_state']      = $order->get_billing_state();
-		if ( empty( $data['billing_email'] ) && $order->get_billing_email() ) {
-			$data['billing_email'] = $order->get_billing_email();
-		}
+		// Anyone can type a phone number, so the receipt (which shows the full
+		// address) only ever goes to the email already on that saved order.
+		$data['billing_email'] = $order->get_billing_email();
 		if ( ! empty( $data['ship_to_different_address'] ) ) {
 			return $data;
 		}

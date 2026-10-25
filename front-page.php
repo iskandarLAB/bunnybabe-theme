@@ -91,6 +91,7 @@ $aff_url    = get_theme_mod( 'bb_affiliate_url', '' );
 			<div class="bb-plan bb-plan--hero bb-lift bb-reveal">
 				<span class="bb-plan__tag bb-sway2"><?php esc_html_e( 'best value ♡', 'bunnybabe' ); ?></span>
 				<div><div class="bb-plan__name">BABE PACK</div><div class="bb-plan__sub"><?php esc_html_e( '5 bottles · 30ml each', 'bunnybabe' ); ?></div></div>
+				<div class="bb-countdown" data-bb-countdown="586" role="timer" aria-live="off" hidden><?php esc_html_e( 'Deal ends in', 'bunnybabe' ); ?> <strong data-bb="cd-time">09:46</strong></div>
 				<div class="bb-plan__price"><strong>RM99</strong><s>RM195</s></div>
 				<ul><li><?php esc_html_e( 'RM19.80 per bottle', 'bunnybabe' ); ?></li><li><?php esc_html_e( 'Save RM96', 'bunnybabe' ); ?></li><li><?php esc_html_e( 'FREE shipping', 'bunnybabe' ); ?></li><li><?php esc_html_e( 'Collect all 5 scents', 'bunnybabe' ); ?></li><li><?php esc_html_e( '+ FREE mystery tester 5ml', 'bunnybabe' ); ?></li></ul>
 				<button type="button" class="bb-btn bb-btn--pink bb-cta bb-cta--light" data-bb-addall>
@@ -178,6 +179,39 @@ $aff_url    = get_theme_mod( 'bb_affiliate_url', '' );
 	</div>
 </section>
 
+<?php $bb_reviews = function_exists( 'bb_testimonials' ) ? bb_testimonials() : array(); ?>
+<?php if ( $bb_reviews ) : ?>
+<!-- Testimonials -->
+<section class="bb-wrap bb-section bb-stack" id="reviews">
+	<div class="bb-sechead">
+		<div>
+			<span class="bb-eyebrow"><?php esc_html_e( 'Real babes, real reviews', 'bunnybabe' ); ?></span>
+			<h2 class="bb-h2 bb-reveal"><?php esc_html_e( 'They said it, not us ♡', 'bunnybabe' ); ?></h2>
+		</div>
+		<div class="bb-revnav">
+			<button type="button" class="bb-iconbtn" data-bb-rev="-1" aria-label="<?php esc_attr_e( 'Previous review', 'bunnybabe' ); ?>"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+			<button type="button" class="bb-iconbtn" data-bb-rev="1" aria-label="<?php esc_attr_e( 'Next review', 'bunnybabe' ); ?>"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+		</div>
+	</div>
+	<div class="bb-reviews" data-bb="reviews" tabindex="0" aria-label="<?php esc_attr_e( 'Customer reviews', 'bunnybabe' ); ?>">
+		<?php foreach ( $bb_reviews as $i => $r ) : ?>
+			<figure class="bb-review<?php echo $r['quote'] ? '' : ' bb-review--img'; ?>">
+				<?php if ( $r['img'] ) : ?>
+					<img src="<?php echo esc_url( $r['img'] ); ?>" alt="<?php echo esc_attr( $r['quote'] ? $r['name'] : sprintf( /* translators: %d number */ __( 'Bunny Babe customer review %d', 'bunnybabe' ), $i + 1 ) ); ?>" loading="lazy">
+				<?php endif; ?>
+				<?php if ( $r['quote'] ) : ?>
+					<figcaption>
+						<span class="bb-review__stars" aria-label="<?php echo esc_attr( sprintf( /* translators: %d stars */ __( '%d out of 5 stars', 'bunnybabe' ), $r['stars'] ) ); ?>"><?php echo esc_html( str_repeat( '★', $r['stars'] ) ); ?></span>
+						<blockquote>“<?php echo esc_html( $r['quote'] ); ?>”</blockquote>
+						<span class="bb-review__who"><strong><?php echo esc_html( $r['name'] ); ?></strong><?php if ( $r['scent'] ) : ?><span class="bb-chip"><?php echo esc_html( $r['scent'] ); ?></span><?php endif; ?></span>
+					</figcaption>
+				<?php endif; ?>
+			</figure>
+		<?php endforeach; ?>
+	</div>
+</section>
+<?php endif; ?>
+
 <!-- Voucher -->
 <section class="bb-wrap bb-section" id="voucher">
 	<div class="bb-voucher">
@@ -198,7 +232,7 @@ $aff_url    = get_theme_mod( 'bb_affiliate_url', '' );
 			</form>
 
 			<div class="bb-voucher__form" data-bb="claim-done" hidden>
-				<strong style="font-size:18px"><?php esc_html_e( "Yay, it's yours! It's added to your bag automatically:", 'bunnybabe' ); ?></strong>
+				<strong style="font-size:18px"><?php esc_html_e( "Yay, it's yours! It's added to your bag automatically once you have 2+ bottles:", 'bunnybabe' ); ?></strong>
 				<div class="bb-voucher__row" style="align-items:center">
 					<span class="bb-code"><?php echo esc_html( strtoupper( $bb['first_coupon'] ) ); ?></span>
 					<button class="bb-btn bb-btn--black" type="button" data-bb="copy" data-code="<?php echo esc_attr( strtoupper( $bb['first_coupon'] ) ); ?>"><?php esc_html_e( 'Copy code', 'bunnybabe' ); ?></button>

@@ -4,7 +4,7 @@
  */
 defined( 'ABSPATH' ) || exit;
 
-define( 'BB_VERSION', '1.3.3' );
+define( 'BB_VERSION', '1.4.1' );
 define( 'BB_DIR', get_template_directory() );
 
 require BB_DIR . '/inc/config.php';
@@ -15,6 +15,7 @@ if ( class_exists( 'WooCommerce' ) ) {
 	require BB_DIR . '/inc/cart.php';
 	require BB_DIR . '/inc/vouchers.php';
 	require BB_DIR . '/inc/tracking.php';
+	require BB_DIR . '/inc/social.php';
 } else {
 	add_action(
 		'admin_notices',
@@ -29,6 +30,7 @@ add_action(
 	function () {
 		load_theme_textdomain( 'bunnybabe', BB_DIR . '/languages' );
 		add_theme_support( 'title-tag' );
+		add_theme_support( 'post-thumbnails' );
 		add_theme_support( 'html5', array( 'search-form', 'comment-form', 'gallery', 'caption', 'style', 'script' ) );
 		add_theme_support( 'woocommerce' );
 		add_theme_support( 'responsive-embeds' );
@@ -44,10 +46,13 @@ add_action(
 		wp_localize_script(
 			'bb-main',
 			'bbData',
-			array(
-				'ajax'     => admin_url( 'admin-ajax.php' ),
-				'hasWoo'   => class_exists( 'WooCommerce' ),
-				'checkout' => '#checkout',
+			apply_filters(
+				'bb_script_data',
+				array(
+					'ajax'     => admin_url( 'admin-ajax.php' ),
+					'hasWoo'   => class_exists( 'WooCommerce' ),
+					'checkout' => '#checkout',
+				)
 			)
 		);
 	}
@@ -168,7 +173,8 @@ add_action(
 		if ( ! $order || $order->get_meta( '_bb_px_sent' ) || ! array_filter( bb_pixel_ids() ) ) {
 			return;
 		}
-		if ( in_array( $order->get_status(), array( 'failed', 'cancelled' ), true ) ) {
+		// Only count real sales: paid, or waiting for a manual check (bank transfer).
+		if ( ! $order->is_paid() && 'on-hold' !== $order->get_status() ) {
 			return;
 		}
 		$order->update_meta_data( '_bb_px_sent', 1 );

@@ -10,12 +10,12 @@ Appearance → Themes → Add New → Upload Theme → choose `bunnybabe.zip` �
 
 ## 3. Run setup (one click)
 Appearance → **Bunny Babe Setup** → **Run setup**. It creates only what is missing:
-- 5 products (Vanilla, Secret, Aurelle, Marsh, Swift) at RM19.90 with photos, in the "Bunny Babe" category
+- 5 products (Vanilla, Secret, Aurelle, Marsh, Swift) at RM39 with photos, in the "Bunny Babe" category
 - Voucher **BUNNY5** (RM5, first order only)
 - "Home" page as the front page + "Track Order" page
 - Classic WooCommerce checkout (old content is kept as a backup)
 - Store set to Malaysia only, currency RM
-- Shipping zone "Malaysia" with RM6 flat rate
+- Shipping zone "Malaysia" with RM5 flat rate
 
 ## 4. Your settings
 - Appearance → Customize → **Bunny Babe**: WhatsApp number, affiliate form link, courier tracking link (use `{tracking}` where the AWB goes), top bar text.
@@ -24,8 +24,8 @@ Appearance → **Bunny Babe Setup** → **Run setup**. It creates only what is m
 ## How the store rules work
 | Rule | Where |
 |---|---|
-| 1 = RM19.90, 2 = RM35.50, 5 = RM85.50 (mixed scents, best combo) | Automatic "Bundle savings" line at checkout |
-| Shipping RM6, FREE from 2 bottles | Flat rate in the Malaysia zone; the theme makes it free at 2+ |
+| 1 = RM39, 2 = RM59, 5 = RM99 (mixed scents, best combo) | Automatic "Bundle savings" line at checkout |
+| Shipping RM5, FREE from 2 bottles | Flat rate in the Malaysia zone; the theme makes it free at 2+ |
 | BUNNY5 first order only | Checked by phone + email at checkout |
 | RM5 voucher for the 2nd order | Created automatically when a first order is paid; shown on the thank-you page, in the order email and as an order note |
 | Claim-voucher WhatsApp numbers | WooCommerce → **Voucher leads** (with an "Open WhatsApp" link) |
